@@ -1,8 +1,13 @@
 package unichristus.edu.br.alunoonline;
 
+import android.content.ActivityNotFoundException;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
@@ -35,11 +40,16 @@ import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -67,7 +77,6 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        b = (Button) findViewById(R.id.button1);
         list = (ListView) findViewById(R.id.list);
 
         path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Trinity/PDF Files";
@@ -107,157 +116,52 @@ public class MainActivity extends AppCompatActivity
 
     public void createPDF() throws FileNotFoundException, DocumentException {
 
-        //create document file
-        Document doc = new Document();
+        Toast.makeText(getApplicationContext(), Environment.getExternalStorageState(), Toast.LENGTH_SHORT).show();
+        if(Build.VERSION.SDK_INT>22){
+            requestPermissions(new String[] {"android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.READ_EXTERNAL_STORAGE"}, 1);
+        }
         try {
+                File files_folder = getFilesDir();
+                File files_child = new File(files_folder, "files_child");
+                files_child.mkdirs();
+                File created_folder = getDir("custom", MODE_PRIVATE);
+                File f1_child = new File(created_folder, "custom_child");
+                f1_child.mkdirs();
+                File gpxfile = new File(f1_child, "teste.txt");
+                FileWriter writer = new FileWriter(gpxfile);
+                writer.append("teste");
+                writer.flush();
+                writer.close();
+                Uri path = Uri.fromFile(gpxfile);
+                Toast.makeText(getApplicationContext(), "Saved " + gpxfile.getPath(), Toast.LENGTH_SHORT).show();
 
-            Log.e("PDFCreator", "PDF Path: " + path);
-            SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy");
-            file = new File(dir, "Trinity PDF" + sdf.format(Calendar.getInstance().getTime()) + ".pdf");
-            FileOutputStream fOut = new FileOutputStream(file);
-            PdfWriter writer = PdfWriter.getInstance(doc, fOut);
-
-            //open the document
-            doc.open();
-//create table
-            PdfPTable pt = new PdfPTable(3);
-            pt.setWidthPercentage(100);
-            float[] fl = new float[]{20, 45, 35};
-            pt.setWidths(fl);
-            cell = new PdfPCell();
-            cell.setBorder(Rectangle.NO_BORDER);
-
-            //set drawable in cell
-            Drawable myImage = MainActivity.this.getResources().getDrawable(R.drawable.ic_menu_camera);
-            Bitmap bitmap = ((BitmapDrawable) myImage).getBitmap();
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            byte[] bitmapdata = stream.toByteArray();
-            try {
-                bgImage = Image.getInstance(bitmapdata);
-                bgImage.setAbsolutePosition(330f, 642f);
-                cell.addElement(bgImage);
-                pt.addCell(cell);
-                cell = new PdfPCell();
-                cell.setBorder(Rectangle.NO_BORDER);
-                cell.addElement(new Paragraph("Trinity Tuts"));
-
-                cell.addElement(new Paragraph(""));
-                cell.addElement(new Paragraph(""));
-                pt.addCell(cell);
-                cell = new PdfPCell(new Paragraph(""));
-                cell.setBorder(Rectangle.NO_BORDER);
-                pt.addCell(cell);
-
-                PdfPTable pTable = new PdfPTable(1);
-                pTable.setWidthPercentage(100);
-                cell = new PdfPCell();
-                cell.setColspan(1);
-                cell.addElement(pt);
-                pTable.addCell(cell);
-                PdfPTable table = new PdfPTable(6);
-
-                float[] columnWidth = new float[]{6, 30, 30, 20, 20, 30};
-                table.setWidths(columnWidth);
-
-
-                cell = new PdfPCell();
-
-
-                cell.setBackgroundColor(myColor);
-                cell.setColspan(6);
-                cell.addElement(pTable);
-                table.addCell(cell);
-                cell = new PdfPCell(new Phrase(" "));
-                cell.setColspan(6);
-                table.addCell(cell);
-                cell = new PdfPCell();
-                cell.setColspan(6);
-
-                cell.setBackgroundColor(myColor1);
-
-                cell = new PdfPCell(new Phrase("#"));
-                cell.setBackgroundColor(myColor1);
-                table.addCell(cell);
-                cell = new PdfPCell(new Phrase("Header 1"));
-                cell.setBackgroundColor(myColor1);
-                table.addCell(cell);
-                cell = new PdfPCell(new Phrase("Header 2"));
-                cell.setBackgroundColor(myColor1);
-                table.addCell(cell);
-                cell = new PdfPCell(new Phrase("Header 3"));
-                cell.setBackgroundColor(myColor1);
-                table.addCell(cell);
-                cell = new PdfPCell(new Phrase("Header 4"));
-                cell.setBackgroundColor(myColor1);
-                table.addCell(cell);
-                cell = new PdfPCell(new Phrase("Header 5"));
-                cell.setBackgroundColor(myColor1);
-                table.addCell(cell);
-
-                //table.setHeaderRows(3);
-                cell = new PdfPCell();
-                cell.setColspan(6);
-
-                for (int i = 1; i <= 10; i++) {
-                    table.addCell(String.valueOf(i));
-                    table.addCell("Header 1 row " + i);
-                    table.addCell("Header 2 row " + i);
-                    table.addCell("Header 3 row " + i);
-                    table.addCell("Header 4 row " + i);
-                    table.addCell("Header 5 row " + i);
-
-                }
-
-                PdfPTable ftable = new PdfPTable(6);
-                ftable.setWidthPercentage(100);
-                float[] columnWidthaa = new float[]{30, 10, 30, 10, 30, 10};
-                ftable.setWidths(columnWidthaa);
-                cell = new PdfPCell();
-                cell.setColspan(6);
-                cell.setBackgroundColor(myColor1);
-                cell = new PdfPCell(new Phrase("Total Nunber"));
-                cell.setBorder(Rectangle.NO_BORDER);
-                cell.setBackgroundColor(myColor1);
-                ftable.addCell(cell);
-                cell = new PdfPCell(new Phrase(""));
-                cell.setBorder(Rectangle.NO_BORDER);
-                cell.setBackgroundColor(myColor1);
-                ftable.addCell(cell);
-                cell = new PdfPCell(new Phrase(""));
-                cell.setBorder(Rectangle.NO_BORDER);
-                cell.setBackgroundColor(myColor1);
-                ftable.addCell(cell);
-                cell = new PdfPCell(new Phrase(""));
-                cell.setBorder(Rectangle.NO_BORDER);
-                cell.setBackgroundColor(myColor1);
-                ftable.addCell(cell);
-                cell = new PdfPCell(new Phrase(""));
-                cell.setBorder(Rectangle.NO_BORDER);
-                cell.setBackgroundColor(myColor1);
-                ftable.addCell(cell);
-                cell = new PdfPCell(new Phrase(""));
-                cell.setBorder(Rectangle.NO_BORDER);
-                cell.setBackgroundColor(myColor1);
-                ftable.addCell(cell);
-                cell = new PdfPCell(new Paragraph("Footer"));
-                cell.setColspan(6);
-                ftable.addCell(cell);
-                cell = new PdfPCell();
-                cell.setColspan(6);
-                cell.addElement(ftable);
-                table.addCell(cell);
-                doc.add(table);
-                Toast.makeText(getApplicationContext(), "created PDF", Toast.LENGTH_LONG).show();
-            } catch (DocumentException de) {
-                Log.e("PDFCreator", "DocumentException:" + de);
             } catch (IOException e) {
-                Log.e("PDFCreator", "ioException:" + e);
-            } finally {
-                doc.close();
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+
+    }
+
+    public  String getFileValue(String fileName, Context context) {
+        try {
+            StringBuffer outStringBuf = new StringBuffer();
+            String inputLine = "";
+            /*
+             * We have to use the openFileInput()-method the ActivityContext
+             * provides. Again for security reasons with openFileInput(...)
+             */
+            String finalPath = getFilesDir().toString() + File.separator + fileName;
+            FileInputStream fIn = context.openFileInput(fileName);
+            InputStreamReader isr = new InputStreamReader(fIn);
+            BufferedReader inBuff = new BufferedReader(isr);
+            while ((inputLine = inBuff.readLine()) != null) {
+                outStringBuf.append(inputLine);
+                outStringBuf.append("\n");
+            }
+            inBuff.close();
+            return outStringBuf.toString();
+        } catch (IOException e) {
+            return null;
         }
     }
 
@@ -287,29 +191,6 @@ public class MainActivity extends AppCompatActivity
         return MyFiles;
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-//getting files from directory and display in listview
-        try {
-
-            ArrayList<String> FilesInFolder = GetFiles("/sdcard/Trinity/PDF Files");
-            if (FilesInFolder.size() != 0)
-                list.setAdapter(new ArrayAdapter<String>(this,
-                        android.R.layout.simple_list_item_1, FilesInFolder));
-
-            list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                }
-            });
-
-
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        }
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
