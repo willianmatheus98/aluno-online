@@ -36,6 +36,7 @@ import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.html.WebColors;
+import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
@@ -53,6 +54,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -121,47 +123,55 @@ public class MainActivity extends AppCompatActivity
             requestPermissions(new String[] {"android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.READ_EXTERNAL_STORAGE"}, 1);
         }
         try {
-                File files_folder = getFilesDir();
-                File files_child = new File(files_folder, "files_child");
-                files_child.mkdirs();
-                File created_folder = getDir("custom", MODE_PRIVATE);
-                File f1_child = new File(created_folder, "custom_child");
-                f1_child.mkdirs();
-                File gpxfile = new File(f1_child, "teste.txt");
-                FileWriter writer = new FileWriter(gpxfile);
-                writer.append("teste");
-                writer.flush();
-                writer.close();
-                Uri path = Uri.fromFile(gpxfile);
-                Toast.makeText(getApplicationContext(), "Saved " + gpxfile.getPath(), Toast.LENGTH_SHORT).show();
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            //Create time stamp
+            Date date = new Date() ;
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(date);
+
+            File myFile = new File(Environment.getExternalStorageDirectory() + "/Download",  timeStamp + ".pdf");
+
+            OutputStream output = new FileOutputStream(myFile);
+
+            //Step 1
+            Document document = new Document();
+
+            //Step 2
+            PdfWriter writer = PdfWriter.getInstance(document, output);
+
+            //Step 3
+            document.open();
+
+            PdfContentByte canvas = writer.getDirectContent();
+            Rectangle rect = new Rectangle(36, 36, 559, 806);
+            rect.setBorder(Rectangle.BOX);
+            rect.setBorderWidth(2);
+            canvas.rectangle(rect);
+
+            //Step 4 Add content
+            document.add(new Paragraph("teste"));
+            document.add(new Paragraph("testeeee"));
+            document.add(new Paragraph("testeeeeeeeeeeeeeeeeeeeeeeeeee"));
+
+            //Step 5: Close the document
+            document.close();
+
+            viewPdf(myFile);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
     }
 
-    public  String getFileValue(String fileName, Context context) {
+    private void viewPdf(File myFile){
         try {
-            StringBuffer outStringBuf = new StringBuffer();
-            String inputLine = "";
-            /*
-             * We have to use the openFileInput()-method the ActivityContext
-             * provides. Again for security reasons with openFileInput(...)
-             */
-            String finalPath = getFilesDir().toString() + File.separator + fileName;
-            FileInputStream fIn = context.openFileInput(fileName);
-            InputStreamReader isr = new InputStreamReader(fIn);
-            BufferedReader inBuff = new BufferedReader(isr);
-            while ((inputLine = inBuff.readLine()) != null) {
-                outStringBuf.append(inputLine);
-                outStringBuf.append("\n");
-            }
-            inBuff.close();
-            return outStringBuf.toString();
-        } catch (IOException e) {
-            return null;
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(Uri.fromFile(myFile), "application/pdf");
+            intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+            startActivity(intent);
+        }catch (Exception e){
+            Toast.makeText(getApplicationContext(), "O arquivo se encontra na pasta de Downloads", Toast.LENGTH_SHORT).show();
         }
     }
 
